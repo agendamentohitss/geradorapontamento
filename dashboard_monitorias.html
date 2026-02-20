@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <title>Dashboard de Monitorias</title>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Plugin para rótulos de dados -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f4f6f8}
@@ -122,32 +124,21 @@ select,input,button{padding:6px}
   white-space:nowrap;
 }
 
-/* Emojis */
-.score-emojis{
-  position:relative;
-  height:0;
-}
-.score-emojis .emo{
-  position:relative;
-  top:-30px;
-  font-size:24px;
-}
-.emo-left { float:left; }
-.emo-25   { position:absolute; left:35%;}
-.emo-75   { position:absolute; left:72%;}
-.emo-right{ float:right; }
-
-@media (max-width: 600px){
-  .score-emojis .emo{ font-size:20px; top:-28px; }
-  .score-pointer { top:-10px; }
-}
-
-/* GRÁFICOS */
-.charts{
+/* ===== ÁREA DE GRÁFICOS (2 colunas) ===== */
+.charts-2col{
   display:grid;
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns: 1fr 1fr;  /* esquerda | direita */
   gap:20px;
 }
+
+/* Coluna esquerda empilhada (2 cartões) */
+.left-col{
+  display:grid;
+  grid-template-rows: 1fr 1fr; /* dois gráficos de mesma altura */
+  gap:20px;
+}
+
+/* Cartões de gráficos */
 .chart-card{
   background:#fff;
   padding:10px;
@@ -162,7 +153,14 @@ select,input,button{padding:6px}
   margin-bottom:6px;
   gap:6px;
 }
-canvas{height:250px!important}
+
+/* Alturas proporcionais */
+canvas#notas, canvas#reinc{
+  height:180px !important; /* cada um 180px = 360px no total */
+}
+canvas#resp{
+  height:360px !important; /* igual à soma dos dois da esquerda */
+}
 
 /* TABELA */
 table{
@@ -196,15 +194,25 @@ th,td{
   border-radius:8px
 }
 .close{float:right;cursor:pointer;font-size:20px}
+
+/* Responsivo básico */
+@media (max-width: 900px){
+  .charts-2col{
+    grid-template-columns: 1fr; /* empilha em 1 coluna no mobile */
+  }
+  canvas#notas, canvas#reinc, canvas#resp{
+    height:240px !important;
+  }
+}
 </style>
 </head>
 
 <body>
 
 <header>
-  <img src="https://globalhitss.com/br/wp-content/uploads/2025/01/logo-hitss-red.png" alt="Hitss">
+  https://globalhitss.com/br/wp-content/uploads/2025/01/logo-hitss-red.png
   <h1>Dashboard de Monitorias</h1>
-  <img src="https://claro.sdetelecom.com.br/wp-content/uploads/2023/05/claro-empresas-logo-01-300x146.png" alt="Claro">
+  https://claro.sdetelecom.com.br/wp-content/uploads/2023/05/claro-empresas-logo-01-300x146.png
 </header>
 
 <div class="container">
@@ -238,7 +246,7 @@ th,td{
     <div class="card"><h3 id="criticos">0</h3>Críticos</div>
   </div>
 
-  <!-- ===== INDICADOR DE DESEMPENHO (SETA PRETA FIXA) ===== -->
+  <!-- ===== INDICADOR DE DESEMPENHO (sem carinhas) ===== -->
   <div class="score-indicator">
     <div class="score-legend">
       <span>Indicador de desempenho (média atual)</span>
@@ -263,29 +271,30 @@ th,td{
         <div class="pin-label" id="score-value">0</div>
       </div>
     </div>
+  </div> <!-- /score-indicator -->
 
+  <!-- ===== LAYOUT DE GRÁFICOS ===== -->
+  <div class="charts-2col">
 
-  <!-- GRÁFICOS -->
-  <div class="charts">
-    <div class="chart-card">
-      <div class="chart-header"><span>Notas (por faixa)</span></div>
-      <canvas id="notas"></canvas>
+    <!-- Coluna ESQUERDA (2 gráficos empilhados) -->
+    <div class="left-col">
+      <div class="chart-card">
+        <div class="chart-header"><span>Notas (por faixa)</span></div>
+        <canvas id="notas"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header"><span>Reincidência (&lt; 70)</span></div>
+        <canvas id="reinc"></canvas>
+      </div>
     </div>
 
+    <!-- Coluna DIREITA (1 gráfico horizontal) -->
     <div class="chart-card">
       <div class="chart-header"><span>Responsáveis (Qtd.)</span></div>
       <canvas id="resp"></canvas>
     </div>
 
-    <div class="chart-card">
-      <div class="chart-header"><span>Ranking (Média por analista)</span></div>
-      <canvas id="rank"></canvas>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-header"><span>Reincidência (&lt; 70)</span></div>
-      <canvas id="reinc"></canvas>
-    </div>
   </div>
 
   <!-- RANKINGS -->
@@ -330,10 +339,10 @@ function normalizarRegistro(r){
   const notaNum  = Number(r.nota) || 0;
 
   const status   = r.status || (
-    notaNum >= 90 ? "Excelente desempenho 🤩" :
-    notaNum >= 70 ? "Desempenho dentro do esperado 😎" :
-    notaNum >= 50 ? "Oportunidade de melhoria 🫤" :
-                    "Desempenho abaixo do esperado 😰"
+    notaNum >= 90 ? "Excelente desempenho" :
+    notaNum >= 70 ? "Desempenho dentro do esperado" :
+    notaNum >= 50 ? "Oportunidade de melhoria" :
+                    "Desempenho abaixo do esperado"
   );
 
   let dataISO = r.dataISO, mesISO = r.mesISO;
@@ -399,7 +408,7 @@ function aplicar(){
   montarTabela();
   criarGraficos();
 
-  // Atualiza a barra/emoji de desempenho (SETA PRETA)
+  // Atualiza a barra/label do indicador (seta preta fixa)
   renderScoreIndicator(media);
 
   // Rankings (se usados)
@@ -432,12 +441,11 @@ function carregarResponsaveis(){
 }
 
 /* ========= INDICADOR DE DESEMPENHO ========= */
-/* Texto do label à direita (mantém emojis) */
-function statusWithEmoji(nota){
-  if(nota >= 90) return "Excelente desempenho 🤩";
-  if(nota >= 70) return "Desempenho dentro do esperado 😎";
-  if(nota >= 50) return "Oportunidade de melhoria 🫤";
-  return "Desempenho abaixo do esperado 😰";
+function statusText(nota){
+  if(nota >= 90) return "Excelente desempenho";
+  if(nota >= 70) return "Desempenho dentro do esperado";
+  if(nota >= 50) return "Oportunidade de melhoria";
+  return "Desempenho abaixo do esperado";
 }
 
 /* Seta e etiqueta fixas em PRETO; clamp 1%/99% para não sumir nas bordas */
@@ -453,16 +461,11 @@ function renderScoreIndicator(mediaAtual){
 
   pointer.style.left = `${safe}%`;
   label.textContent  = val.toFixed(1);          // valor real
-
-  statusL.textContent = statusWithEmoji(val);   // texto informativo
-
-  // Garante cor preta fixa (seta + etiqueta), independentemente da faixa
-  const arrowShape = document.getElementById('arrow-shape');
-  if(arrowShape) arrowShape.setAttribute('fill', '#000');
-  pointer.querySelector('.pin-label').style.background = '#000';
+  statusL.textContent = statusText(val);
+  // cores fixas em preto já estão no CSS/HTML
 }
 
-/* ========= GRÁFICOS ========= */
+/* ===== GRÁFICOS ===== */
 function criarGraficos(){
   // Notas por faixa
   const faixas = { "0-69":0, "70-89":0, "90-100":0 };
@@ -474,17 +477,16 @@ function criarGraficos(){
   });
   desenhar('notas', Object.keys(faixas), Object.values(faixas), '#d60000');
 
-  // Responsáveis (quantidade)
-  const porResp = contar(filtrados, 'analista');
-  desenhar('resp', Object.keys(porResp), Object.values(porResp), '#0078D4');
-
-  // Ranking (média por analista) - Top 10
-  const medias = mediasPorAnalista(filtrados).sort((a,b)=>b.media - a.media).slice(0,10);
-  desenhar('rank', medias.map(x=>x.analista), medias.map(x=>Number(x.media.toFixed(1))), '#22A06B');
-
   // Reincidência (<70) por analista
   const reinc = reincidenciaCritica(filtrados);
   desenhar('reinc', Object.keys(reinc), Object.values(reinc), '#F39C12');
+
+  // Responsáveis (Qtd.) - horizontal
+  const porResp = contar(filtrados, 'analista');     // {nome: qtd}
+  const ord = Object.entries(porResp).sort((a,b)=>b[1]-a[1]); // maior->menor
+  const lbl = ord.map(([k])=>k);
+  const val = ord.map(([,v])=>v);
+  desenhar('resp', lbl, val, '#0078D4');             // horizontal
 }
 
 function contar(arr, campo){
@@ -493,17 +495,6 @@ function contar(arr, campo){
     acc[k] = (acc[k] || 0) + 1;
     return acc;
   }, {});
-}
-
-function mediasPorAnalista(arr){
-  const m = {};
-  arr.forEach(r=>{
-    const k = r.analista || "(vazio)";
-    if(!m[k]) m[k] = { soma:0, qtd:0 };
-    m[k].soma += Number(r.nota) || 0;
-    m[k].qtd  += 1;
-  });
-  return Object.entries(m).map(([analista, {soma,qtd}])=>({ analista, media: qtd ? (soma/qtd) : 0 }));
 }
 
 function reincidenciaCritica(arr){
@@ -517,10 +508,15 @@ function reincidenciaCritica(arr){
   return m;
 }
 
+/* ---- Função genérica de desenho (resp => horizontal) + DATA LABELS ---- */
 function desenhar(id, labels, values, color){
   if(charts[id]) charts[id].destroy();
+
   const ctx = document.getElementById(id);
   if(!ctx) return;
+
+  const horizontal = (id === 'resp'); // só "Responsáveis" horizontal
+
   charts[id] = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -528,14 +524,36 @@ function desenhar(id, labels, values, color){
       datasets: [{ data: values, backgroundColor: color }]
     },
     options: {
+      indexAxis: horizontal ? 'y' : 'x',  // 👈 horizontal no 'resp'
       responsive: true,
       maintainAspectRatio: false,
-      plugins:{ legend:{ display:false } },
+      plugins:{
+        legend:{ display:false },
+        datalabels: {
+          color: '#000',
+          font: { weight: 'bold', size: 11 },
+          anchor: horizontal ? 'end' : 'end',
+          align:  horizontal ? 'right' : 'end',
+          offset: horizontal ? 4 : -2,
+          formatter: (v) => v // 👈 mostra o valor absoluto; para % substitua por cálculo
+        }
+      },
       scales:{
-        x:{ ticks:{ autoSkip:false, maxRotation:45, minRotation:0 } },
-        y:{ beginAtZero:true, precision:0 }
+        x:{
+          beginAtZero:true,
+          ticks:{ precision:0 }
+        },
+        y:{
+          ticks:{
+            autoSkip:false,
+            maxRotation:0,
+            minRotation:0,
+            font: horizontal ? { size: 11 } : undefined
+          }
+        }
       }
-    }
+    },
+    plugins: [ChartDataLabels] // registra o plugin no chart
   });
 }
 
