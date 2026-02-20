@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard de Monitorias</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f8}
+
+/* CABEÇALHO */
+header{
+  background:#ffffff;
+  padding:10px 20px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  display:grid;
+  grid-template-columns: auto 1fr auto;
+  align-items:center;
+}
+header img{ height:40px; }
+header h1{
+  text-align:center;
+  font-size:20px;
+  margin:0;
+  color:#333;
+}
+
+/* CONTEÚDO */
+.container{
+  max-width:1300px;
+  margin:25px auto;
+  padding:20px;
+}
+
+/* FILTROS */
+.filters{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+  margin-bottom:15px;
+}
+select,input,button{padding:6px}
+
+/* CARDS */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+  margin-bottom:20px;
+}
+.card{
+  background:#fff;
+  padding:12px;
+  text-align:center;
+  border-radius:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1)
+}
+.card h3{margin:0;color:#d60000}
+
+/* ===== INDICADOR DE DESEMPENHO ===== */
+.score-indicator{
+  background:#fff;
+  border-radius:10px;
+  padding:12px 14px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+  margin-bottom:22px;
+}
+.score-legend{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:bold;
+  margin-bottom:8px;
+  color:#333;
+}
+.score-legend #score-label{ color:#333; }
+
+.score-bar{
+  position:relative;
+  width:100%;
+  height:28px;
+  border:2px solid #0e3a46;
+  border-radius:14px;
+  overflow:hidden;
+  background:#eee;
+  display:flex; /* evita fendas entre segmentos */
+}
+.seg{
+  flex: 0 0 var(--w, 0%);
+  height:100%;
+}
+.seg-red    { background:#c93c2e; }  /* <50   */
+.seg-amber  { background:#f4b000; }  /* 50–69 */
+.seg-yellow { background:#f7c735; }  /* 70–89 */
+.seg-green  { background:#33c24d; }  /* 90–100 */
+
+/* Ponteiro: SETA SVG + etiqueta (FIXOS PRETOS) */
+.score-pointer{
+  position:absolute;
+  top:-4px;
+  transform:translateX(-50%);
+  pointer-events:none;
+  z-index:2;
+}
+.score-pointer .arrow-icon{
+  display:block;
+  margin:0 auto;
+  width:20px; height:16px;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.12));
+}
+.score-pointer .pin-label{
+  margin-top: 2px;
+  background:#000;          /* FIXO PRETO */
+  color:#fff;
+  font-size:12px;
+  line-height:1;
+  padding:2px 6px;
+  border-radius:6px;
+  text-align:center;
+  white-space:nowrap;
+}
+
+/* Emojis */
+.score-emojis{
+  position:relative;
+  height:0;
+}
+.score-emojis .emo{
+  position:relative;
+  top:-30px;
+  font-size:24px;
+}
+.emo-left { float:left; }
+.emo-25   { position:absolute; left:35%;}
+.emo-75   { position:absolute; left:72%;}
+.emo-right{ float:right; }
+
+@media (max-width: 600px){
+  .score-emojis .emo{ font-size:20px; top:-28px; }
+  .score-pointer { top:-10px; }
+}
+
+/* GRÁFICOS */
+.charts{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:20px;
+}
+.chart-card{
+  background:#fff;
+  padding:10px;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1)
+}
+.chart-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:bold;
+  margin-bottom:6px;
+  gap:6px;
+}
+canvas{height:250px!important}
+
+/* TABELA */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:25px;
+  background:#fff;
+}
+th,td{
+  border:1px solid #ccc;
+  padding:6px;
+  font-size:13px
+}
+.critico{background:#ffd6d6}
+
+/* MODAL */
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.7);
+  justify-content:center;
+  align-items:center;
+  z-index:999
+}
+.modal-content{
+  background:#fff;
+  width:90%;
+  height:90%;
+  padding:15px;
+  border-radius:8px
+}
+.close{float:right;cursor:pointer;font-size:20px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="https://globalhitss.com/br/wp-content/uploads/2025/01/logo-hitss-red.png" alt="Hitss">
+  <h1>Dashboard de Monitorias</h1>
+  <img src="https://claro.sdetelecom.com.br/wp-content/uploads/2023/05/claro-empresas-logo-01-300x146.png" alt="Claro">
+</header>
+
+<div class="container">
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <input type="date" id="filtroDia">
+    <input type="month" id="filtroMes">
+    <select id="filtroResponsavel"><option value="">Responsável</option></select>
+    <select id="filtroNota">
+      <option value="">Nota</option>
+      <option value="70-90">70 a 90</option>
+      <option value="90-100">90 a 100</option>
+      <option value="0-69">Abaixo de 70</option>
+    </select>
+
+    <!-- Rankings (se usados) -->
+    <select id="filtroMesRanking"><option value="">Ranking por mês</option></select>
+    <select id="filtroTrimestreRanking"><option value="">Ranking por trimestre</option></select>
+    <select id="filtroAnoRanking"><option value="">Ranking anual</option></select>
+
+    <button onclick="exportar()">📤 Exportar dados</button>
+
+    <button onclick="window.open('index.html', '_self')">🔙 Voltar ao Gerador</button>
+  </div>
+
+  <!-- CARDS -->
+  <div class="cards">
+    <div class="card"><h3 id="total">0</h3>Total</div>
+    <div class="card"><h3 id="media">0</h3>Média</div>
+    <div class="card"><h3 id="criticos">0</h3>Críticos</div>
+  </div>
+
+  <!-- ===== INDICADOR DE DESEMPENHO (SETA PRETA FIXA) ===== -->
+  <div class="score-indicator">
+    <div class="score-legend">
+      <span>Indicador de desempenho (média atual)</span>
+      <span id="score-label">—</span>
+    </div>
+
+    <div class="score-bar">
+      <!-- Segmentos: 0–49 | 50–69 | 70–89 | 90–100 -->
+      <div class="seg seg-red"    style="--w:50%"></div>
+      <div class="seg seg-amber"  style="--w:20%"></div>
+      <div class="seg seg-yellow" style="--w:20%"></div>
+      <div class="seg seg-green"  style="--w:10%"></div>
+
+      <!-- Ponteiro único (SETA SVG) -->
+      <div class="score-pointer" id="score-pointer" style="left:0%">
+        <svg class="arrow-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <!-- triângulo apontando para baixo (FIXO PRETO) -->
+          <path id="arrow-shape" d="M12 17L5 7h14l-7 10z" fill="#000"></path>
+          <!-- contorno opcional -->
+          <path d="M12 17L5 7h14l-7 10z" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+        </svg>
+        <div class="pin-label" id="score-value">0</div>
+      </div>
+    </div>
+
+
+  <!-- GRÁFICOS -->
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-header"><span>Notas (por faixa)</span></div>
+      <canvas id="notas"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header"><span>Responsáveis (Qtd.)</span></div>
+      <canvas id="resp"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header"><span>Ranking (Média por analista)</span></div>
+      <canvas id="rank"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header"><span>Reincidência (&lt; 70)</span></div>
+      <canvas id="reinc"></canvas>
+    </div>
+  </div>
+
+  <!-- RANKINGS -->
+  <h2 style="margin-top:30px;">🏆 Ranking Mensal</h2>
+  <div id="rankingMensal"></div>
+
+  <h2 style="margin-top:30px;">🏆 Ranking Trimestral</h2>
+  <div id="rankingTrimestral"></div>
+
+  <h2 style="margin-top:30px;">🏆 Ranking Anual</h2>
+  <div id="rankingAnual"></div>
+
+  <!-- TABELA -->
+  <table>
+    <thead>
+      <tr><th>Data</th><th>Responsável</th><th>Nota</th><th>Status</th><th>Cód. CIR</th></tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" onclick="modal.style.display='none'">✖</span>
+    <canvas id="graficoFull"></canvas>
+  </div>
+</div>
+
+<script>
+let charts = {}, fullChart;
+const modal = document.getElementById('modal');
+const graficoFull = document.getElementById('graficoFull');
+
+const dados = (JSON.parse(localStorage.getItem("monitorias")) || []).map(normalizarRegistro);
+let filtrados = [];
+
+/* ========= NORMALIZAÇÃO ========= */
+function normalizarRegistro(r){
+  const analista = r.analista || r.nome || "";
+  const notaNum  = Number(r.nota) || 0;
+
+  const status   = r.status || (
+    notaNum >= 90 ? "Excelente desempenho 🤩" :
+    notaNum >= 70 ? "Desempenho dentro do esperado 😎" :
+    notaNum >= 50 ? "Oportunidade de melhoria 🫤" :
+                    "Desempenho abaixo do esperado 😰"
+  );
+
+  let dataISO = r.dataISO, mesISO = r.mesISO;
+  if(!dataISO || !mesISO){
+    const dObj = parsePtBrDateTime(r.data);
+    if(dObj){ dataISO = dObj.toISOString().slice(0,10); mesISO = dObj.toISOString().slice(0,7); }
+  }
+
+  return {
+    analista,
+    tipo: r.tipo || "",
+    dataAuditoria: r.dataAuditoria || "",
+    cliente: r.cliente || "",
+    dataAuditada: r.dataAuditada || "",
+    etapa: r.etapa || "",
+    codCir: r.codCir || "",
+    observacao: r.observacao || r.obs || "",
+    nota: notaNum,
+    status,
+    itens: r.itens || {},
+    data: r.data || "",
+    dataISO: dataISO || "",
+    mesISO: mesISO || ""
+  };
+}
+
+function parsePtBrDateTime(s){
+  if(!s) return null;
+  const [datePart, timePart] = String(s).split(' ');
+  const [d,m,y] = (datePart||"").split('/').map(Number);
+  if(!y||!m||!d) return null;
+  let hh=0, mm=0, ss=0;
+  if(timePart){
+    const t = timePart.split(':').map(Number);
+    hh=t[0]||0; mm=t[1]||0; ss=t[2]||0;
+  }
+  return new Date(y, m-1, d, hh, mm, ss);
+}
+
+/* ========= FILTROS / APLICAÇÃO ========= */
+function aplicar(){
+  const fdia  = document.getElementById('filtroDia').value;
+  const fmes  = document.getElementById('filtroMes').value;
+  const fresp = document.getElementById('filtroResponsavel').value;
+  const faix  = document.getElementById('filtroNota').value;
+
+  filtrados = dados.filter(r=>{
+    if(fdia && r.dataISO !== fdia) return false;
+    if(fmes && r.mesISO !== fmes) return false;
+    if(fresp && r.analista !== fresp) return false;
+    if(faix){
+      const [a,b] = faix.split('-').map(Number);
+      if(r.nota < a || r.nota > b) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('total').innerText = filtrados.length;
+  const media = filtrados.length ? (filtrados.reduce((s,r)=>s + Number(r.nota),0) / filtrados.length) : 0;
+  document.getElementById('media').innerText = media.toFixed(1);
+  document.getElementById('criticos').innerText = filtrados.filter(r => Number(r.nota) < 70).length;
+
+  montarTabela();
+  criarGraficos();
+
+  // Atualiza a barra/emoji de desempenho (SETA PRETA)
+  renderScoreIndicator(media);
+
+  // Rankings (se usados)
+  atualizarRankingMensal?.();
+  atualizarRankingTrimestral?.();
+  atualizarRankingAnual?.();
+}
+
+function montarTabela(){
+  const tbody = document.getElementById('tabela');
+  tbody.innerHTML = "";
+  filtrados.forEach(r=>{
+    const tr = document.createElement('tr');
+    if(Number(r.nota) < 70) tr.classList.add('critico');
+    tr.innerHTML = `
+      <td>${r.data}</td>
+      <td>${r.analista}</td>
+      <td>${Number(r.nota).toFixed(1)}</td>
+      <td>${r.status}</td>
+      <td>${r.codCir || "-"}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function carregarResponsaveis(){
+  const sel = document.getElementById('filtroResponsavel');
+  const nomes = [...new Set(dados.map(d=>d.analista).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  nomes.forEach(n => sel.add(new Option(n, n)));
+}
+
+/* ========= INDICADOR DE DESEMPENHO ========= */
+/* Texto do label à direita (mantém emojis) */
+function statusWithEmoji(nota){
+  if(nota >= 90) return "Excelente desempenho 🤩";
+  if(nota >= 70) return "Desempenho dentro do esperado 😎";
+  if(nota >= 50) return "Oportunidade de melhoria 🫤";
+  return "Desempenho abaixo do esperado 😰";
+}
+
+/* Seta e etiqueta fixas em PRETO; clamp 1%/99% para não sumir nas bordas */
+function renderScoreIndicator(mediaAtual){
+  const raw = Number(mediaAtual) || 0;
+  const val = Math.max(0, Math.min(100, raw));
+  const safe = (val <= 0) ? 1 : (val >= 100 ? 99 : val);
+
+  const pointer = document.getElementById('score-pointer');
+  const label   = document.getElementById('score-value');
+  const statusL = document.getElementById('score-label');
+  if(!pointer || !label || !statusL) return;
+
+  pointer.style.left = `${safe}%`;
+  label.textContent  = val.toFixed(1);          // valor real
+
+  statusL.textContent = statusWithEmoji(val);   // texto informativo
+
+  // Garante cor preta fixa (seta + etiqueta), independentemente da faixa
+  const arrowShape = document.getElementById('arrow-shape');
+  if(arrowShape) arrowShape.setAttribute('fill', '#000');
+  pointer.querySelector('.pin-label').style.background = '#000';
+}
+
+/* ========= GRÁFICOS ========= */
+function criarGraficos(){
+  // Notas por faixa
+  const faixas = { "0-69":0, "70-89":0, "90-100":0 };
+  filtrados.forEach(r=>{
+    const n = Number(r.nota);
+    if(n < 70) faixas["0-69"]++;
+    else if(n < 90) faixas["70-89"]++;
+    else faixas["90-100"]++;
+  });
+  desenhar('notas', Object.keys(faixas), Object.values(faixas), '#d60000');
+
+  // Responsáveis (quantidade)
+  const porResp = contar(filtrados, 'analista');
+  desenhar('resp', Object.keys(porResp), Object.values(porResp), '#0078D4');
+
+  // Ranking (média por analista) - Top 10
+  const medias = mediasPorAnalista(filtrados).sort((a,b)=>b.media - a.media).slice(0,10);
+  desenhar('rank', medias.map(x=>x.analista), medias.map(x=>Number(x.media.toFixed(1))), '#22A06B');
+
+  // Reincidência (<70) por analista
+  const reinc = reincidenciaCritica(filtrados);
+  desenhar('reinc', Object.keys(reinc), Object.values(reinc), '#F39C12');
+}
+
+function contar(arr, campo){
+  return arr.reduce((acc, r)=>{
+    const k = r[campo] || "(vazio)";
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function mediasPorAnalista(arr){
+  const m = {};
+  arr.forEach(r=>{
+    const k = r.analista || "(vazio)";
+    if(!m[k]) m[k] = { soma:0, qtd:0 };
+    m[k].soma += Number(r.nota) || 0;
+    m[k].qtd  += 1;
+  });
+  return Object.entries(m).map(([analista, {soma,qtd}])=>({ analista, media: qtd ? (soma/qtd) : 0 }));
+}
+
+function reincidenciaCritica(arr){
+  const m = {};
+  arr.forEach(r=>{
+    const k = r.analista || "(vazio)";
+    if(Number(r.nota) < 70){
+      m[k] = (m[k] || 0) + 1;
+    }
+  });
+  return m;
+}
+
+function desenhar(id, labels, values, color){
+  if(charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: color }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ autoSkip:false, maxRotation:45, minRotation:0 } },
+        y:{ beginAtZero:true, precision:0 }
+      }
+    }
+  });
+}
+
+/* ========= EXPORTAÇÃO ========= */
+function exportar(){
+  const base = JSON.parse(localStorage.getItem("monitorias")) || [];
+  const todosRotulos = new Set();
+  base.forEach(r=>{
+    const itens = r.itens || {};
+    Object.keys(itens).forEach(ch => todosRotulos.add(ch));
+  });
+
+  const colunasFixas = [
+    "Data/Hora Registro",
+    "Data Auditoria",
+    "Data Auditada",
+    "Mês (YYYY-MM)",
+    "Analista",
+    "Tipo",
+    "Cliente",
+    "Etapa",
+    "Cód. CIR",
+    "Nota",
+    "Status",
+    "Observação"
+  ];
+
+  const linhas = filtrados.map(r=>{
+    const linha = {
+      "Data/Hora Registro": r.data || "",
+      "Data Auditoria": r.dataAuditoria || "",
+      "Data Auditada": r.dataAuditada || "",
+      "Mês (YYYY-MM)": r.mesISO || "",
+      "Analista": r.analista || "",
+      "Tipo": r.tipo || "",
+      "Cliente": r.cliente || "",
+      "Etapa": r.etapa || "",
+      "Cód. CIR": r.codCir || "",
+      "Nota": Number(r.nota || 0),
+      "Status": r.status || "",
+      "Observação": r.observacao || ""
+    };
+    const itens = r.itens || {};
+    todosRotulos.forEach(rotulo => { linha[rotulo] = itens[rotulo] || ""; });
+    return linha;
+  });
+
+  const ordemDinamicos = Array.from(todosRotulos).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const header = [...colunasFixas, ...ordemDinamicos];
+
+  const ws = XLSX.utils.json_to_sheet(linhas, { header });
+  ws['!cols'] = header.map(h=>({ wch: Math.max(12, String(h).length + 2) }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Monitorias");
+  XLSX.writeFile(wb, "monitorias_completas.xlsx");
+}
+
+/* ========= RANKINGS ========= */
+function quarterFromMesISO(mesISO){
+  if(!mesISO) return "";
+  const [y,m] = mesISO.split('-').map(Number);
+  const q = Math.floor((m-1)/3)+1;
+  return `${y}-Q${q}`;
+}
+
+function carregarMesesRanking(){
+  const sel = document.getElementById("filtroMesRanking");
+  const meses = [...new Set(dados.map(d=>d.mesISO).filter(Boolean))].sort();
+  meses.forEach(m => sel.add(new Option(m, m)));
+}
+function carregarTrimestresRanking(){
+  const sel = document.getElementById("filtroTrimestreRanking");
+  const trimestres = [...new Set(dados.map(d=>quarterFromMesISO(d.mesISO)).filter(Boolean))].sort((a,b)=>{
+    const [ay,aq] = a.split('-Q').map(Number);
+    const [by,bq] = b.split('-Q').map(Number);
+    return ay===by ? aq-bq : ay-by;
+  });
+  trimestres.forEach(t => sel.add(new Option(t, t)));
+}
+function carregarAnosRanking(){
+  const sel = document.getElementById("filtroAnoRanking");
+  const anos = [...new Set(dados.map(d=> (d.mesISO||"").slice(0,4)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  anos.forEach(a => sel.add(new Option(a, a)));
+}
+
+function gerarRanking(base){
+  const mapa = {};
+  base.forEach(r=>{
+    const nome = r.analista || "(vazio)";
+    if(!mapa[nome]) mapa[nome] = { soma:0, qtd:0 };
+    mapa[nome].soma += Number(r.nota)||0;
+    mapa[nome].qtd++;
+  });
+  return Object.entries(mapa)
+    .map(([analista, v]) => ({ analista, media: v.soma/v.qtd, qtd: v.qtd }))
+    .sort((a,b)=> b.media - a.media);
+}
+
+function renderRankingTabela(lista, containerId){
+  const destino = document.getElementById(containerId);
+  if(!destino) return;
+  if(!lista || lista.length===0){
+    destino.innerHTML = "<p>Nenhuma monitoria para este recorte.</p>";
+    return;
+  }
+  let html = `
+    <table style="width:100%;background:#fff;border-collapse:collapse;margin-top:10px;">
+      <thead>
+        <tr style="background:#d60000;color:#fff;">
+          <th style="padding:6px;">Posição</th>
+          <th style="padding:6px;">Analista</th>
+          <th style="padding:6px;">Média</th>
+          <th style="padding:6px;">Qtd.</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  lista.slice(0,10).forEach((item,i)=>{
+    html += `
+      <tr>
+        <td style="text-align:center;font-weight:bold;">${i+1}º</td>
+        <td>${item.analista}</td>
+        <td style="text-align:center;">${item.media.toFixed(1)}</td>
+        <td style="text-align:center;">${item.qtd}</td>
+      </tr>`;
+  });
+  html += `</tbody></table>`;
+  destino.innerHTML = html;
+}
+
+function atualizarRankingMensal(){
+  const mes = document.getElementById("filtroMesRanking").value;
+  const base = mes ? dados.filter(r=>r.mesISO === mes) : filtrados;
+  renderRankingTabela(gerarRanking(base), "rankingMensal");
+}
+function atualizarRankingTrimestral(){
+  const tri = document.getElementById("filtroTrimestreRanking").value;
+  const base = tri ? dados.filter(r=>quarterFromMesISO(r.mesISO) === tri) : filtrados;
+  renderRankingTabela(gerarRanking(base), "rankingTrimestral");
+}
+function atualizarRankingAnual(){
+  const ano = document.getElementById("filtroAnoRanking").value;
+  const base = ano ? dados.filter(r=>(r.mesISO||"").startsWith(ano)) : filtrados;
+  renderRankingTabela(gerarRanking(base), "rankingAnual");
+}
+
+/* ========= EVENTOS / INIT ========= */
+['filtroDia','filtroMes','filtroResponsavel','filtroNota','filtroMesRanking','filtroTrimestreRanking','filtroAnoRanking']
+  .forEach(id => document.getElementById(id).addEventListener('change', aplicar));
+
+carregarResponsaveis();
+carregarMesesRanking();
+carregarTrimestresRanking();
+carregarAnosRanking();
+aplicar();
+
+modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.style.display='none'; });
+</script>
+
+</body>
+</html>

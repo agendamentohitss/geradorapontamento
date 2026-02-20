@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Ficha de Monitoria</title>
+
+<style>
+:root { --vermelho:#e60000; }
+
+body{
+  font-family:Arial, sans-serif;
+  margin:0;
+  background:#f4f6f8;
+}
+
+/* ===== CABEÇALHO ===== */
+header{
+  background:#ffffff;
+  color:#000;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  padding:10px 20px;
+}
+header img{ height:40px; }
+header h1{
+  margin:0;
+  font-size:16px;
+  text-align:center;
+}
+
+/* ===== TOPO ===== */
+.top-actions{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 20px;
+}
+.top-actions button{
+  background:var(--vermelho);
+  color:#fff;
+  border:none;
+  padding:8px 12px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+/* ===== CONTAINER ===== */
+.container{ padding:20px; }
+
+/* ===== SEÇÕES ===== */
+.section-title{
+  background:#e60000;
+  color:#fff;
+  padding:6px;
+  margin-top:25px;
+  font-weight:bold;
+}
+
+/* ===== GRID ===== */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+/* ===== CAMPOS ===== */
+.field{ display:flex; flex-direction:column; }
+label{ font-size:13px; font-weight:bold; }
+.zera{ color:var(--vermelho); }
+
+select,input,textarea{
+  border:1px solid #000;
+  padding:6px;
+  font-size:13px;
+}
+
+/* ===== BOTÕES ===== */
+.actions{
+  margin-top:20px;
+  display:flex;
+  gap:10px;
+}
+.actions button{
+  background:var(--vermelho);
+  color:#fff;
+  border:none;
+  padding:10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+/* ===== NOTA ===== */
+.sidebar{
+  position:fixed;
+  right:10px;
+  top:120px;
+  border:3px solid var(--vermelho);
+  padding:15px;
+  font-size:20px;
+  font-weight:bold;
+  background:#fff;
+  text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="https://globalhitss.com/br/wp-content/uploads/2025/01/logo-hitss-red.png" alt="HITSS">
+  <h1>FICHA DE MONITORIA - AGENDAMENTO EMPRESARIAL</h1>
+  <img src="https://claro.sdetelecom.com.br/wp-content/uploads/2023/05/claro-empresas-logo-01-300x146.png" alt="Claro Empresas">
+</header>
+
+<div class="top-actions">
+  <button onclick="window.open('dashboard_monitorias.html', '_self')">📊 Dashboard</button>
+  <button onclick="limparBase()">🗑️ Limpar Base</button>
+</div>
+
+<div class="container">
+
+  <div class="section-title">Dados Gerais</div>
+  <div class="grid">
+    <div class="field">
+      <label for="analista">Analista avaliado</label>
+      <select id="analista">
+        <option value="">Selecione</option>
+        <option>Ana Carla dos Santos Pereira</option>
+        <option>Ana Clara Oliveira Prietro</option>
+        <option>André Vinicius Camargo Pereira Da Cruz</option>
+        <option>Andreia Cristina Gagetti</option>
+        <option>Caio Santos de Souza</option>
+        <option>Camila Fabiano Batista da Silva</option>
+        <option>Carla Cristina Machado Pfeifer</option>
+        <option>Caroliny de Siqueira Barsoti</option>
+        <option>Daniele Cristina Vicente Ferreira</option>
+        <option>Danilo Moraes Santos</option>
+        <option>Gabrielle Regina de Souza</option>
+        <option>Guilherme Menezes Sales</option>
+        <option>Henrique Mantoanelli Americo</option>
+        <option>Izabela Morena Barbosa Ferreira</option>
+        <option>Janaina do Amaral</option>
+        <option>Jayne Benetti</option>
+        <option>Jessica Thais de Oliveira</option>
+        <option>Joao Paulo Souza da Silva</option>
+        <option>Juliana Bezerra Faria Prates</option>
+        <option>Kelly Cristiane Felício</option>
+        <option>Leonardo de Godoy Junior</option>
+        <option>Leticia Silva Camargo</option>
+        <option>Marcos Paulo da Silva Donadon</option>
+        <option>Mariele Santos Bruna Aguilera</option>
+        <option>Nabyla Ellen de Oliveira Ale</option>
+        <option>Rosangela Pereira da Silva Bezerra</option>
+        <option>Tagides Lindsey Leite</option>
+        <option>Thamires Caroline Ricci Leão</option>
+        <option>Victoria Matiuzzo Rodrigues</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="tipo">Tipo</label>
+      <select id="tipo">
+        <option>Contato telefônico</option>
+        <option>Contato via e-mail</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="dataAuditoria">Data da auditoria</label>
+      <input type="date" id="dataAuditoria">
+    </div>
+
+    <div class="field">
+      <label for="cliente">Cliente</label>
+      <input type="text" id="cliente">
+    </div>
+
+    <div class="field">
+      <label for="dataAuditada">Data auditada</label>
+      <input type="date" id="dataAuditada">
+    </div>
+
+    <div class="field">
+      <label for="etapa">Etapa</label>
+      <select id="etapa">
+        <option>6.6</option>
+        <option>14.18</option>
+        <option>Liberação</option>
+        <option>Recorrência</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="codCir">Cód. Cir.</label>
+      <input type="text" id="codCir">
+    </div>
+  </div>
+
+  <div class="section-title">Atendimento ao Cliente</div>
+  <div class="grid" id="avaliacao"></div>
+
+  <div class="section-title">Demais Procedimentos</div>
+  <div class="grid" id="procedimentos"></div>
+
+  <div class="section-title">Detalhamento</div>
+  <textarea id="detalhamento" rows="4" style="width:100%"></textarea>
+
+  <div class="actions">
+    <button onclick="gerarFeedback()">Gerar Feedback</button>
+    <button onclick="limparCampos()">Limpar Campos</button>
+    <button onclick="copiarTexto()">Copiar texto</button>
+  </div>
+
+  <textarea id="feedback" rows="6" style="width:100%; margin-top:10px;"></textarea>
+</div>
+
+<div class="sidebar">
+  Nota<br>
+  <span id="nota">100</span>
+</div>
+
+<script>
+/* ============================================================
+   OPÇÕES E LISTAS
+============================================================ */
+const OPCOES = `
+<option value="na">N/A</option>
+<option value="conforme">Conforme</option>
+<option value="parcial">Atendeu parcialmente</option>
+<option value="nao">Não conforme</option>
+`;
+
+const CAMPOS = [
+  { nome: "Comunicação profissional" },
+  { nome: "Utilizou o script padrão" },
+  { nome: "Postura no atendimento" },
+  { nome: "Uso adequado do canal" },
+  { nome: "Qualidade do texto" },
+  { nome: "Atuação técnica" },
+  { nome: "Realização do contato", zera: true },
+  { nome: "Execução do fluxo" },
+  { nome: "Correção da informação" },
+  { nome: "Atendimento ao cliente" }
+];
+
+const PROCEDIMENTOS = [
+  { nome: "Conformidade do processo" },
+  { nome: "Atualização e registros (SGP/Agcent)" },
+  { nome: "Contato com áreas de apoio (CEC, Regional, NII)" },
+  { nome: "Portabilidade - Bilhetes" },
+  { nome: "Portabilidade - Direcionamento" },
+  { nome: "Portabilidade - Pré teste" },
+  { nome: "Consulta correta de equipamentos", zera: true },
+  { nome: "Abertura de OS ModOS", zera: true },
+  { nome: "Abertura de WF", zera: true },
+  { nome: "Atendimento portabilidade", zera: true },
+  { nome: "Data hora conforme atividade", zera: true }
+];
+
+/* ============================================================
+   CRIAÇÃO DOS CAMPOS (JÁ COM "N/A")
+============================================================ */
+function criarCampos(lista, containerId) {
+  const container = document.getElementById(containerId);
+  lista.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.innerHTML = `
+      <label class="${item.zera ? 'zera' : ''}">
+        ${item.nome} ${item.zera ? '(Zera)' : ''}
+      </label>
+      <select data-zera="${item.zera ? '1' : '0'}" value="na">${OPCOES}</select>
+    `;
+    container.appendChild(div);
+  });
+}
+
+criarCampos(CAMPOS, 'avaliacao');
+criarCampos(PROCEDIMENTOS, 'procedimentos');
+
+/* ============================================================
+   DATA DA AUDITORIA = HOJE (sempre)
+============================================================ */
+function setHojeNoCampoDataAuditoria() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  const input = document.getElementById('dataAuditoria');
+  if (input) input.value = `${ano}-${mes}-${dia}`; // YYYY-MM-DD
+}
+
+// Preenche ao carregar a página
+window.addEventListener('DOMContentLoaded', setHojeNoCampoDataAuditoria);
+
+/* ============================================================
+   CÁLCULO DA NOTA
+============================================================ */
+document.addEventListener('change', calcularNota);
+
+function calcularNota() {
+  let nota = 100;
+  document.querySelectorAll('select[data-zera]').forEach(sel => {
+    const zera = sel.dataset.zera === '1';
+    if (sel.value === 'parcial') nota -= zera ? 50 : 3;
+    if (sel.value === 'nao') nota -= zera ? 100 : 5;
+  });
+  if (nota < 0) nota = 0;
+  document.getElementById('nota').innerText = nota;
+}
+
+/* ============================================================
+   GERAR FEEDBACK + SALVAR MONITORIA
+============================================================ */
+function gerarFeedback(){
+  const nome = document.getElementById("analista").value;
+  const nota = document.getElementById("nota").innerText;
+  const codCir = document.getElementById("codCir").value;
+  const obs = document.getElementById("detalhamento").value;
+
+  const tipo = document.getElementById("tipo").value;
+  const dataAuditoria = document.getElementById("dataAuditoria").value;
+  const cliente = document.getElementById("cliente").value;
+  const dataAuditada = document.getElementById("dataAuditada").value;
+  const etapa = document.getElementById("etapa").value;
+
+  if(!nome){
+    alert("Selecione o analista avaliado.");
+    return;
+  }
+
+  let status =
+    nota >= 90 ? "Excelente desempenho 🤩" :
+    nota >= 70 ? "Desempenho dentro do esperado 😎" :
+    nota >= 50 ? "Oportunidade de melhoria 🫤" :
+    "Desempenho abaixo do esperado 😰";
+
+  document.getElementById("feedback").value =
+`Olá ${nome},
+Segue abaixo dados da monitoria realizada.
+
+Nota: ${nota}
+Status: ${status}
+Cód. CIR: ${codCir || "-"}
+
+${obs || "-"}
+
+Para eventuais esclarecimentos relacionados à monitoria, acione a supervisão.`;
+
+  /* CAPTURA DOS ITENS */
+  const respostas = {};
+  document.querySelectorAll('div.grid select[data-zera]').forEach(sel => {
+    const label = sel.closest('.field').querySelector('label').innerText;
+    const rotulo = label.replace(/\s*\(Zera\)\s*$/i, '').trim();
+    const texto = sel.options[sel.selectedIndex].text;
+    respostas[rotulo] = texto;
+  });
+
+  /* REGISTRO PARA SALVAR */
+  const registro = {
+    analista: nome,
+    tipo,
+    dataAuditoria,
+    cliente,
+    dataAuditada,
+    etapa,
+    codCir,
+    nota: Number(nota),
+    status,
+    observacao: obs,
+    itens: respostas,
+    data: new Date().toLocaleString("pt-BR"),
+    dataISO: new Date().toISOString().slice(0,10),
+    mesISO: new Date().toISOString().slice(0,7)
+  };
+
+  const monitorias = JSON.parse(localStorage.getItem("monitorias")) || [];
+  monitorias.push(registro);
+  localStorage.setItem("monitorias", JSON.stringify(monitorias));
+}
+
+/* ============================================================
+   LIMPAR CAMPOS (RETORNA N/A e DATA=HOJE)
+============================================================ */
+function limparCampos(){
+  // Limpa textos e datas
+  document.querySelectorAll('input[type="text"], input[type="date"]').forEach(el => el.value = "");
+  // Repõe "Data da auditoria" com HOJE
+  setHojeNoCampoDataAuditoria();
+
+  // Limpa textarea
+  document.querySelectorAll("textarea").forEach(el => el.value = "");
+
+  // Volta todos os dinâmicos para N/A
+  document.querySelectorAll('select[data-zera]').forEach(sel => { sel.value = "na"; });
+
+  // Volta selects fixos para primeira opção
+  document.querySelectorAll('select:not([data-zera])').forEach(sel => { sel.selectedIndex = 0; });
+
+  // Reseta nota
+  document.getElementById("nota").innerText = 100;
+}
+
+/* ============================================================
+   OUTROS BOTÕES
+============================================================ */
+function copiarTexto(){
+  const campo = document.getElementById("feedback");
+  campo.select();
+  document.execCommand("copy");
+  alert("Texto copiado!");
+}
+
+function limparBase(){
+  if(confirm("Deseja apagar toda a base?")){
+    localStorage.removeItem("monitorias");
+    alert("Base limpa com sucesso.");
+  }
+}
+</script>
+
+</body>
+</html>
