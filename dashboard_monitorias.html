@@ -510,12 +510,10 @@ function reincidenciaCritica(arr){
 
 /* ---- Função genérica de desenho (resp => horizontal) + DATA LABELS ---- */
 function desenhar(id, labels, values, color){
-  if(charts[id]) charts[id].destroy();
+  if (charts[id]) charts[id].destroy();
 
   const ctx = document.getElementById(id);
-  if(!ctx) return;
-
-  const horizontal = (id === 'resp'); // só "Responsáveis" horizontal
+  if (!ctx) return;
 
   charts[id] = new Chart(ctx, {
     type: 'bar',
@@ -524,36 +522,58 @@ function desenhar(id, labels, values, color){
       datasets: [{ data: values, backgroundColor: color }]
     },
     options: {
-      indexAxis: horizontal ? 'y' : 'x',  // 👈 horizontal no 'resp'
+      // Todos horizontais:
+      indexAxis: 'y',
+
       responsive: true,
       maintainAspectRatio: false,
-      plugins:{
-        legend:{ display:false },
+
+      layout: {
+        // Folga extra para o rótulo não “sair” do gráfico
+        padding: { right: 16 }
+      },
+
+      plugins: {
+        legend: { display:false },
+
+        // Rótulos de dados
         datalabels: {
           color: '#000',
           font: { weight: 'bold', size: 11 },
-          anchor: horizontal ? 'end' : 'end',
-          align:  horizontal ? 'right' : 'end',
-          offset: horizontal ? 4 : -2,
-          formatter: (v) => v // 👈 mostra o valor absoluto; para % substitua por cálculo
+          // âncora no fim da barra e alinhado à direita (ligeiramente para dentro)
+          anchor: 'end',
+          align:  'right',
+          offset: 4,
+          clamp: true,        // impede que desenhe fora do canvas
+          // Se quiser porcentagem, troque o formatter:
+          formatter: (v) => v
+        },
+        tooltip: {
+          callbacks: {
+            // mantém tooltip padrão, se quiser customizar
+            label: (ctx) => `${ctx.formattedValue}`
+          }
         }
       },
-      scales:{
-        x:{
-          beginAtZero:true,
-          ticks:{ precision:0 }
+
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          // 👇 dá “sobra” no eixo para caber o rótulo no final
+          grace: '15%'   // ajuste para 10~20% conforme necessidade
         },
-        y:{
-          ticks:{
-            autoSkip:false,
-            maxRotation:0,
-            minRotation:0,
-            font: horizontal ? { size: 11 } : undefined
+        y: {
+          ticks: {
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0,
+            font: { size: 11 }
           }
         }
       }
     },
-    plugins: [ChartDataLabels] // registra o plugin no chart
+    plugins: [ChartDataLabels]
   });
 }
 
