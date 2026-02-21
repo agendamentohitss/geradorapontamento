@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <title>Dashboard de Monitorias</title>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Plugin para rótulos de dados -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <style>
 body{font-family:Arial;margin:0;background:#f4f6f8}
@@ -208,9 +210,11 @@ th,td{
 <body>
 
 <header>
-  https://globalhitss.com/br/wp-content/uploads/2025/01/logo-hitss-red.png
+  <img src="https://globalhitss.com/br/wp-content/uploads/2025/01/logo-hitss-red.png" alt="Hitss">
+  
   <h1>Dashboard de Monitorias</h1>
-  https://claro.sdetelecom.com.br/wp-content/uploads/2023/05/claro-empresas-logo-01-300x146.png
+  
+  <img src="https://claro.sdetelecom.com.br/wp-content/uploads/2023/05/claro-empresas-logo-01-300x146.png" alt="Claro Empresas">
 </header>
 
 <div class="container">
@@ -443,7 +447,7 @@ function statusText(nota){
   if(nota >= 90) return "Excelente desempenho 🤩";
   if(nota >= 70) return "Desempenho dentro do esperado 😎";
   if(nota >= 50) return "Oportunidade de melhoria 🫤";
-  return "Desempenho abaixo do esperado 😰";
+  return "Desempenho abaixo do esperado ";
 }
 
 /* Seta e etiqueta fixas em PRETO; clamp 1%/99% para não sumir nas bordas */
@@ -508,10 +512,12 @@ function reincidenciaCritica(arr){
 
 /* ---- Função genérica de desenho (resp => horizontal) + DATA LABELS ---- */
 function desenhar(id, labels, values, color){
-  if (charts[id]) charts[id].destroy();
+  if(charts[id]) charts[id].destroy();
 
   const ctx = document.getElementById(id);
-  if (!ctx) return;
+  if(!ctx) return;
+
+  const horizontal = (id === 'resp'); // só "Responsáveis" horizontal
 
   charts[id] = new Chart(ctx, {
     type: 'bar',
@@ -520,58 +526,36 @@ function desenhar(id, labels, values, color){
       datasets: [{ data: values, backgroundColor: color }]
     },
     options: {
-      // Todos horizontais:
-      indexAxis: 'y',
-
+      indexAxis: horizontal ? 'y' : 'x',  // 👈 horizontal no 'resp'
       responsive: true,
       maintainAspectRatio: false,
-
-      layout: {
-        // Folga extra para o rótulo não “sair” do gráfico
-        padding: { right: 16 }
-      },
-
-      plugins: {
-        legend: { display:false },
-
-        // Rótulos de dados
+      plugins:{
+        legend:{ display:false },
         datalabels: {
           color: '#000',
           font: { weight: 'bold', size: 11 },
-          // âncora no fim da barra e alinhado à direita (ligeiramente para dentro)
-          anchor: 'end',
-          align:  'right',
-          offset: 4,
-          clamp: true,        // impede que desenhe fora do canvas
-          // Se quiser porcentagem, troque o formatter:
-          formatter: (v) => v
-        },
-        tooltip: {
-          callbacks: {
-            // mantém tooltip padrão, se quiser customizar
-            label: (ctx) => `${ctx.formattedValue}`
-          }
+          anchor: horizontal ? 'end' : 'end',
+          align:  horizontal ? 'right' : 'end',
+          offset: horizontal ? 4 : -2,
+          formatter: (v) => v // 👈 mostra o valor absoluto; para % substitua por cálculo
         }
       },
-
-      scales: {
-        x: {
-          beginAtZero: true,
-          ticks: { precision: 0 },
-          // 👇 dá “sobra” no eixo para caber o rótulo no final
-          grace: '15%'   // ajuste para 10~20% conforme necessidade
+      scales:{
+        x:{
+          beginAtZero:true,
+          ticks:{ precision:0 }
         },
-        y: {
-          ticks: {
-            autoSkip: false,
-            maxRotation: 0,
-            minRotation: 0,
-            font: { size: 11 }
+        y:{
+          ticks:{
+            autoSkip:false,
+            maxRotation:0,
+            minRotation:0,
+            font: horizontal ? { size: 11 } : undefined
           }
         }
       }
     },
-    plugins: [ChartDataLabels]
+    plugins: [ChartDataLabels] // registra o plugin no chart
   });
 }
 
@@ -734,4 +718,3 @@ modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.style.displa
 
 </body>
 </html>
-
