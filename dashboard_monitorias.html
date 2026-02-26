@@ -511,13 +511,16 @@ function reincidenciaCritica(arr){
 }
 
 /* ---- Função genérica de desenho (resp => horizontal) + DATA LABELS ---- */
+
 function desenhar(id, labels, values, color){
-  if(charts[id]) charts[id].destroy();
+  if (charts[id]) charts[id].destroy();
 
   const ctx = document.getElementById(id);
-  if(!ctx) return;
+  if (!ctx) return;
 
-  const horizontal = (id === 'resp'); // só "Responsáveis" horizontal
+  // Calcula um sugerido para o eixo X (10% de folga)
+  const maxVal = Math.max(0, ...values);
+  const suggestedMax = maxVal === 0 ? 1 : Math.ceil(maxVal * 1.1);
 
   charts[id] = new Chart(ctx, {
     type: 'bar',
@@ -526,38 +529,51 @@ function desenhar(id, labels, values, color){
       datasets: [{ data: values, backgroundColor: color }]
     },
     options: {
-      indexAxis: horizontal ? 'y' : 'x',  // 👈 horizontal no 'resp'
+      // seus gráficos estão horizontais
+      indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+
+      // 👇 um pouco de padding à direita ajuda o rótulo a não encostar
+      layout: { padding: { right: 16 } },
+
       plugins:{
         legend:{ display:false },
+
+        // 👇 Data labels dentro da barra, ancorados no fim, com clamp
         datalabels: {
-          color: '#000',
-          font: { weight: 'bold', size: 11 },
-          anchor: horizontal ? 'end' : 'end',
-          align:  horizontal ? 'right' : 'end',
-          offset: horizontal ? 4 : -2,
-          formatter: (v) => v // 👈 mostra o valor absoluto; para % substitua por cálculo
+          color: '#000',                         // ajuste se precisar contraste
+          font: { weight:'bold', size: 11 },
+          anchor: 'end',                         // ancora no fim da barra
+          align:  'end',                         // posiciona no fim (dentro)
+          offset: -2,                            // levemente para dentro
+          clamp:  true,                          // não deixa sair do canvas
+          formatter: (v) => v
+          // Se quiser trocar para porcentagem:
+          // formatter: (v, ctx) => {
+          //   const total = ctx.dataset.data.reduce((s,n)=>s+Number(n||0),0);
+          //   return total ? `${(v/total*100).toFixed(0)}%` : '0%';
+          // }
         }
       },
+
       scales:{
         x:{
           beginAtZero:true,
-          ticks:{ precision:0 }
+          ticks:{ precision:0 },
+          // 👇 duas opções (use uma ou as duas):
+          grace: '10%',              // dá respiro extra no eixo
+          suggestedMax: suggestedMax // empurra o limite para além do maior valor
         },
         y:{
-          ticks:{
-            autoSkip:false,
-            maxRotation:0,
-            minRotation:0,
-            font: horizontal ? { size: 11 } : undefined
-          }
+          ticks:{ autoSkip:false, maxRotation:0, minRotation:0, font:{ size:11 } }
         }
       }
     },
-    plugins: [ChartDataLabels] // registra o plugin no chart
+    plugins: [ChartDataLabels]
   });
 }
+
 
 /* ========= EXPORTAÇÃO ========= */
 function exportar(){
@@ -718,3 +734,4 @@ modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.style.displa
 
 </body>
 </html>
+
